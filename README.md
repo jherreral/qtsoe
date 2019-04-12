@@ -1,0 +1,2 @@
+# qtsoe
+SoE on qt
