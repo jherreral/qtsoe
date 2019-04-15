@@ -1,14 +1,16 @@
 import sys
 
-from PySide2.QtWidgets import QApplication, QLabel
+from PySide2.QtGui import QMainWindow, QPushButton, QApplication
 
+from ui_quitter import Ui_MainWindow
 
-app = QApplication(sys.argv)
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+        self.setupUi(self)
 
-#label = QLabel("Hello World!")
-
-label = QLabel("<font color=red size=40>Hello World!</font>")
-
-label.show()
-
-app.exec_()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    frame = MainWindow()
+    frame.show()
+    app.exec_()
