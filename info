@@ -1,0 +1,11 @@
+void Dialog::setItem()
+{
+    QStringList items;
+    items << tr("Spring") << tr("Summer") << tr("Fall") << tr("Winter");
+
+    bool ok;
+    QString item = QInputDialog::getItem(this, tr("QInputDialog::getItem()"),
+                                         tr("Season:"), items, 0, false, &ok);
+    if (ok && !item.isEmpty())
+        itemLabel->setText(item);
+}

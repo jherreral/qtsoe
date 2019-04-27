@@ -1,6 +1,33 @@
 from PySide2.QtWidgets import (QApplication,
 QMainWindow,QLabel,QPlainTextEdit,
-QSizePolicy,QVBoxLayout,QGridLayout,QWidget)
+QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
+
+class Hand(Qwidget):
+    def __init__(self,parent=None,width=300,height=150):
+        super(Hand,self).__init__(parent)
+        self.mainLayout = QGridLayout()
+        self.setLayout(self.mainLayout)
+        self.setMinimumSize(width,height)
+
+        self.factionName = "Communist"
+        self.playerName = "Karen"
+        factionNameLabel = QLabel(self.factionName)
+        factionIconLabel = QLabel("Placeholder")
+        playerNameLabel = QLabel(self.factionName)
+
+        self.mainLayout.addWidget(playerNameLabel,2,1)
+        self.mainLayout.addWidget(factionIconLabel,1,2)
+        self.mainLayout.addWidget(factionNameLabel,2,2)
+
+        #Create cards
+        self.CreatePlaceholderCards()
+
+
+    def CreatePlaceholderCards(self):
+        self.cardsLayout = QGridLayout()
+        
+
+
 
 class Log(QPlainTextEdit):
     def __init__(self,parent=None,width=150,height=150):
@@ -44,6 +71,7 @@ window.setMinimumSize(800,600)
 log = Log(window)
 log.move(500,100)
 track = Track(window)
+lisss=ListChooser(window)
 
 #window.setCentralWidget(log)
 
