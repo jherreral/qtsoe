@@ -1,19 +1,78 @@
 from PySide2.QtWidgets import (QApplication,
-QMainWindow,QLabel,QPlainTextEdit,
+QMainWindow,QLabel,QPlainTextEdit,QPushButton,
 QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
+from PySide2.QtGui import QPixmap,QImage
+from PySide2.QtCore import Qt,SIGNAL
 
-class Hand(Qwidget):
+
+class QLabelButton(QLabel):
+
+    def __init(self, parent):
+        QLabel.__init__(self, parent)
+
+    def enterEvent(self, ev):
+        self.emit(SIGNAL('hoverIn()'))
+
+    def leaveEvent(self, ev):
+        self.emit(SIGNAL('hoverOut()'))
+
+    def mousePressEvent(self, ev):
+        self.emit(SIGNAL('clicked()'))
+
+class Zone(QWidget):
+    def __init__(self, parent=None, *args):
+        super(Zone, self).__init__(parent)
+        self.setMinimumSize(300, 350)
+        self.setMaximumSize(300, 350)
+
+        self.pinkPixmap = QPixmap('C:/Users/jherr/qtsoe/assets/japan.png')
+        self.whitePixmap = self.pinkPixmap.copy()
+        self.whitePixmap.fill()
+
+        self.button = QLabelButton(self)
+        self.button.setPixmap(self.pinkPixmap)
+        self.button.setScaledContents(True)
+        self.button.setMask(self.pinkPixmap.mask()) # THIS DOES THE MAGIC
+
+        self.connect(self.button, SIGNAL('clicked()'), self.onClick)
+        self.connect(self.button, SIGNAL('hoverIn()'), self.onEnter)
+        self.connect(self.button, SIGNAL('hoverOut()'), self.onLeave)
+
+    def onClick(self):
+        print('Button was clicked')
+
+    def onEnter(self):
+        print('Inside')
+        self.button.setPixmap(self.whitePixmap)
+
+    def onLeave(self):
+        print('Outside')
+        self.button.setPixmap(self.pinkPixmap)
+
+
+
+class Map(QWidget):
+    def __init__(self,parent=None,width=400,height=400):
+        super(Map,self).__init__(parent)
+
+
+class Hand(QWidget):
     def __init__(self,parent=None,width=300,height=150):
         super(Hand,self).__init__(parent)
         self.mainLayout = QGridLayout()
         self.setLayout(self.mainLayout)
         self.setMinimumSize(width,height)
+        
+        self.setAutoFillBackground(True)
+        p = self.palette()
+        p.setColor(self.backgroundRole(),Qt.red)
+        self.setPalette(p)
 
         self.factionName = "Communist"
         self.playerName = "Karen"
         factionNameLabel = QLabel(self.factionName)
         factionIconLabel = QLabel("Placeholder")
-        playerNameLabel = QLabel(self.factionName)
+        playerNameLabel = QLabel(self.playerName)
 
         self.mainLayout.addWidget(playerNameLabel,2,1)
         self.mainLayout.addWidget(factionIconLabel,1,2)
@@ -25,6 +84,10 @@ class Hand(Qwidget):
 
     def CreatePlaceholderCards(self):
         self.cardsLayout = QGridLayout()
+        self.cardsLayout.addWidget(QPushButton("Placeholder 1"),1,1)
+        self.cardsLayout.addWidget(QPushButton("Placeholder 2"),1,2)
+        self.cardsLayout.addWidget(QPushButton("Placeholder 3"),1,3)
+        self.mainLayout.addLayout(self.cardsLayout,1,1)
         
 
 
@@ -43,6 +106,12 @@ class Track(QWidget):
         self.mainLayout = QGridLayout()
         self.setLayout(self.mainLayout)
         self.setMinimumSize(width,height)
+
+        # Paint background
+        self.setAutoFillBackground(True)
+        p = self.palette()
+        p.setColor(self.backgroundRole(),Qt.blue)
+        self.setPalette(p)
 
         firstCol = QGridLayout()
         firstCol.addWidget(QLabel("Prod"),1,1)
@@ -69,9 +138,12 @@ app = QApplication([])
 window = QMainWindow()
 window.setMinimumSize(800,600)
 log = Log(window)
-log.move(500,100)
+log.move(600,100)
 track = Track(window)
-lisss=ListChooser(window)
+track.move(600,300)
+hand=Hand(window)
+hand.move(0,400)
+zone1=Zone(window)
 
 #window.setCentralWidget(log)
 
