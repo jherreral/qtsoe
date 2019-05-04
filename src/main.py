@@ -2,7 +2,7 @@ from PySide2.QtWidgets import (QApplication,
 QMainWindow,QLabel,QPlainTextEdit,QPushButton,
 QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
 from PySide2.QtGui import QPixmap,QImage
-from PySide2.QtCore import Qt,SIGNAL
+from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot
 
 
 class QLabelButton(QLabel):
@@ -19,7 +19,9 @@ class QLabelButton(QLabel):
     def mousePressEvent(self, ev):
         self.emit(SIGNAL('clicked()'))
 
-class Zone(QWidget):
+class Zone(QPushButton):
+    zoneActivated = Signal(str)
+
     def __init__(self, parent=None, *args):
         super(Zone, self).__init__(parent)
         self.setMinimumSize(300, 350)
@@ -29,27 +31,30 @@ class Zone(QWidget):
         self.whitePixmap = self.pinkPixmap.copy()
         self.whitePixmap.fill()
 
-        self.button = QLabelButton(self)
-        self.button.setPixmap(self.pinkPixmap)
-        self.button.setScaledContents(True)
-        self.button.setMask(self.pinkPixmap.mask()) # THIS DOES THE MAGIC
+        self.label = QLabel(self)
+        self.label.setPixmap(self.pinkPixmap)
+        self.label.setScaledContents(True)
 
-        self.connect(self.button, SIGNAL('clicked()'), self.onClick)
-        self.connect(self.button, SIGNAL('hoverIn()'), self.onEnter)
-        self.connect(self.button, SIGNAL('hoverOut()'), self.onLeave)
+        self.setMask(self.pinkPixmap.mask()) # THIS DOES THE MAGIC
 
-    def onClick(self):
-        print('Button was clicked')
+        #self.connect(self.button, SIGNAL('clicked()'), self.onClick)
+        #self.button.clicked.connect(self.onClick())
+        #self.connect(self.button, SIGNAL('hoverIn()'), self.onEnter)
+        #self.connect(self.button, SIGNAL('hoverOut()'), self.onLeave)
 
-    def onEnter(self):
+    def enterEvent(self, ev):
+        #self.emit(SIGNAL('hoverIn()'))
+        self.label.setPixmap(self.whitePixmap)
         print('Inside')
-        self.button.setPixmap(self.whitePixmap)
 
-    def onLeave(self):
+    def leaveEvent(self, ev):
+        #self.emit(SIGNAL('hoverOut()'))
+        self.label.setPixmap(self.pinkPixmap)
         print('Outside')
-        self.button.setPixmap(self.pinkPixmap)
 
-
+    def mousePressEvent(self, ev): 
+        self.zoneActivated.emit("I was clicked")
+        print('Button was clicked')
 
 class Map(QWidget):
     def __init__(self,parent=None,width=400,height=400):
@@ -95,10 +100,17 @@ class Hand(QWidget):
 class Log(QPlainTextEdit):
     def __init__(self,parent=None,width=150,height=150):
         super(Log,self).__init__(parent)
-        self.setPlainText("ASDFASDFVXCVXC VsdfsdfadVBXBXCBV XDfsdfsdf")
+        self.setPlainText("Placeholder log text\n")
         self.resize(width,height)
         self.setReadOnly(True)
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+
+    @Slot()
+    @Slot(str)
+    def addEntry(self,text='blo'):
+        self.appendPlainText(text)
+        print('appending')
+
 
 class Track(QWidget):
     def __init__(self,parent=None,width=150,height=150):
@@ -132,28 +144,46 @@ class Track(QWidget):
             playerColumns.addWidget(QLabel(str(p[3])),4,col)
         self.mainLayout.addLayout(playerColumns,1,2)
 
+class PlayerView(QWidget):
+    """
+    Holds all the widgets for a player client:
+    Hand,Track,Log and Map.
+    """
+    def __init__(self,parent=None):
+        super(PlayerView,self).__init__(parent)
+
+        # Player data
+
+        self.setMinimumSize(800,600)
+        self.log = Log(self)
+        self.log.move(600,100)
+        self.track = Track(self)
+        self.track.move(600,300)
+        self.hand=Hand(self)
+        self.hand.move(0,400)
+        self.zone1=Zone(self)
+        
+        self.zone1.zoneActivated.connect(self.log.addEntry)
+
+class GameBoard:
+    def __init__(self):
+        pass
+
 
 app = QApplication([])
 
 window = QMainWindow()
 window.setMinimumSize(800,600)
-log = Log(window)
-log.move(600,100)
-track = Track(window)
-track.move(600,300)
-hand=Hand(window)
-hand.move(0,400)
-zone1=Zone(window)
+
+playerOneView = PlayerView(window)
+
+#zone1.clicked.connect(log.addEntry)
+#QObject.connect(zone1,SIGNAL('clicked()'),log.addEntry)
 
 #window.setCentralWidget(log)
 
 #mylabel.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
-print(str(window.size()))
-print(str(log.size()))
 window.show()
 #mylabel.adjustSize()
-print(str(window.size()))
-print(str(log.size()))
 app.exec_()
 print(str(window.size()))
-print(str(log.size()))
