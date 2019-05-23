@@ -4,6 +4,7 @@ QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
 from PySide2.QtGui import QPixmap,QImage
 from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot
 
+import Gameboard as gb
 
 class QLabelButton(QLabel):
 
@@ -164,10 +165,6 @@ class PlayerView(QWidget):
         self.zone1=Zone(self)
         
         self.zone1.zoneActivated.connect(self.log.addEntry)
-
-class GameBoard:
-    def __init__(self):
-        pass
 
 
 app = QApplication([])
