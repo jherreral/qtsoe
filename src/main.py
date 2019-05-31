@@ -4,7 +4,7 @@ QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
 from PySide2.QtGui import QPixmap,QImage
 from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot
 
-import Gameboard as gb
+import gameboard as gb
 
 class QLabelButton(QLabel):
 
@@ -21,12 +21,16 @@ class QLabelButton(QLabel):
         self.emit(SIGNAL('clicked()'))
 
 class Zone(QPushButton):
+    """
+    Visible object that represents a zone in the game board. It allows the user
+    to respond to requests made by the Game Master.
+    pinkPixmap is the non-visible, interactive part of the widget (the button).
+    whitePixmap is the visible, non-interactive part (the canvas).
+    """
     zoneActivated = Signal(str)
 
-    def __init__(self, parent=None, *args):
+    def __init__(self, parent=None, name = "Empty", position = (0,0), *args):
         super(Zone, self).__init__(parent)
-        self.setMinimumSize(300, 350)
-        self.setMaximumSize(300, 350)
 
         self.pinkPixmap = QPixmap('C:/Users/jherr/qtsoe/assets/japan.png')
         self.whitePixmap = self.pinkPixmap.copy()
@@ -36,6 +40,8 @@ class Zone(QPushButton):
         self.label.setPixmap(self.pinkPixmap)
         self.label.setScaledContents(True)
 
+        self.setMinimumSize(self.pinkPixmap.width, self.pinkPixmap.height)
+        self.setMaximumSize(self.pinkPixmap.width, self.pinkPixmap.height)
         self.setMask(self.pinkPixmap.mask()) # THIS DOES THE MAGIC
 
         #self.connect(self.button, SIGNAL('clicked()'), self.onClick)
@@ -56,11 +62,6 @@ class Zone(QPushButton):
     def mousePressEvent(self, ev): 
         self.zoneActivated.emit("I was clicked")
         print('Button was clicked')
-
-class Map(QWidget):
-    def __init__(self,parent=None,width=400,height=400):
-        super(Map,self).__init__(parent)
-
 
 class Hand(QWidget):
     def __init__(self,parent=None,width=300,height=150):
@@ -94,9 +95,6 @@ class Hand(QWidget):
         self.cardsLayout.addWidget(QPushButton("Placeholder 2"),1,2)
         self.cardsLayout.addWidget(QPushButton("Placeholder 3"),1,3)
         self.mainLayout.addLayout(self.cardsLayout,1,1)
-        
-
-
 
 class Log(QPlainTextEdit):
     def __init__(self,parent=None,width=150,height=150):
@@ -145,6 +143,28 @@ class Track(QWidget):
             playerColumns.addWidget(QLabel(str(p[3])),4,col)
         self.mainLayout.addLayout(playerColumns,1,2)
 
+class Map(QWidget):
+    """
+    Holds all interactive zones
+    """
+
+    def __init__(self,parent=None,width=400,height=400):
+        super(Map,self).__init__(parent)
+        self.zones = {}
+
+    def loadFromAssets(self):
+        self.createZones()
+
+    def createZones(self):
+        with open('MapCoords.csv','r') as f:
+            for line in f:
+                (name,x,y) = line.split(" ")
+                zone = Zone()
+                x=int(x)
+                y=int(y)
+
+
+
 class PlayerView(QWidget):
     """
     Holds all the widgets for a player client:
@@ -165,7 +185,6 @@ class PlayerView(QWidget):
         self.zone1=Zone(self)
         
         self.zone1.zoneActivated.connect(self.log.addEntry)
-
 
 app = QApplication([])
 
