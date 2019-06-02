@@ -2,23 +2,10 @@ from PySide2.QtWidgets import (QApplication,
 QMainWindow,QLabel,QPlainTextEdit,QPushButton,
 QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
 from PySide2.QtGui import QPixmap,QImage
-from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot
+from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot,QEvent,QCoreApplication
 
 import gameboard as gb
-
-class QLabelButton(QLabel):
-
-    def __init(self, parent):
-        QLabel.__init__(self, parent)
-
-    def enterEvent(self, ev):
-        self.emit(SIGNAL('hoverIn()'))
-
-    def leaveEvent(self, ev):
-        self.emit(SIGNAL('hoverOut()'))
-
-    def mousePressEvent(self, ev):
-        self.emit(SIGNAL('clicked()'))
+from os import getcwd
 
 class Zone(QPushButton):
     """
@@ -29,10 +16,15 @@ class Zone(QPushButton):
     """
     zoneActivated = Signal(str)
 
-    def __init__(self, parent=None, name = "Empty", position = (0,0), *args):
+    def __init__(self, parent=None, name = "Empty", position = (0,0), size = (10,10),*args):
         super(Zone, self).__init__(parent)
 
-        self.pinkPixmap = QPixmap('C:/Users/jherr/qtsoe/assets/japan.png')
+        self.selectable = False
+        self.selected = False
+
+        self.setMinimumSize(size[0], size[1])
+        #self.setMaximumSize(300, 350)
+        self.pinkPixmap = QPixmap('assets/japan.png')
         self.whitePixmap = self.pinkPixmap.copy()
         self.whitePixmap.fill()
 
@@ -40,8 +32,7 @@ class Zone(QPushButton):
         self.label.setPixmap(self.pinkPixmap)
         self.label.setScaledContents(True)
 
-        self.setMinimumSize(self.pinkPixmap.width, self.pinkPixmap.height)
-        self.setMaximumSize(self.pinkPixmap.width, self.pinkPixmap.height)
+        
         self.setMask(self.pinkPixmap.mask()) # THIS DOES THE MAGIC
 
         #self.connect(self.button, SIGNAL('clicked()'), self.onClick)
@@ -110,7 +101,6 @@ class Log(QPlainTextEdit):
         self.appendPlainText(text)
         print('appending')
 
-
 class Track(QWidget):
     def __init__(self,parent=None,width=150,height=150):
         super(Track,self).__init__(parent)
@@ -148,21 +138,35 @@ class Map(QWidget):
     Holds all interactive zones
     """
 
-    def __init__(self,parent=None,width=400,height=400):
+    def __init__(self,parent=None,width=600,height=450):
         super(Map,self).__init__(parent)
+        self.scale = width / 826.0
         self.zones = {}
+        self.loadFromAssets()
 
     def loadFromAssets(self):
         self.createZones()
 
     def createZones(self):
-        with open('MapCoords.csv','r') as f:
+        """
+        100mm are equal to 378 px.
+        'Real' width is 680 px
+        """
+        with open('assets/mapCoords.csv','r') as f:
+            f.readline()
             for line in f:
-                (name,x,y) = line.split(" ")
-                zone = Zone()
-                x=int(x)
-                y=int(y)
+                (name,x,y,w,h) = line.split(",")
+                x=int(int(x)*self.scale)
+                y=int(int(y)*self.scale)
+                w=int(int(w)*self.scale)
+                h=int(int(h)*self.scale)
+                zone = Zone(self,name,(x,y),(w,h))
+                zone.move(x,y)
+                self.zones[name] = zone
 
+    def setPossibleZones(self,zoneList):
+        for zoneName in zoneList:
+            self.zones[zoneName].selectable = True
 
 
 class PlayerView(QWidget):
@@ -170,6 +174,13 @@ class PlayerView(QWidget):
     Holds all the widgets for a player client:
     Hand,Track,Log and Map.
     """
+
+    # def event(self,someEvent):
+    #     if someEvent.Type >= QEvent.User:
+    #         print("Event was received")
+    #     else:
+    #         super(PlayerView,self).event(someEvent)
+
     def __init__(self,parent=None):
         super(PlayerView,self).__init__(parent)
 
@@ -182,9 +193,11 @@ class PlayerView(QWidget):
         self.track.move(600,300)
         self.hand=Hand(self)
         self.hand.move(0,400)
-        self.zone1=Zone(self)
+        self.map = Map(self)
+
+        #self.zone1=Zone(self)
         
-        self.zone1.zoneActivated.connect(self.log.addEntry)
+        #self.zone1.zoneActivated.connect(self.log.addEntry)
 
 app = QApplication([])
 
