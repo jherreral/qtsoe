@@ -16,15 +16,22 @@ class Zone(QPushButton):
     """
     zoneActivated = Signal(str)
 
-    def __init__(self, parent=None, name = "Empty", position = (0,0), size = (10,10),*args):
+    def __init__(self, parent=None, name = "Empty", position = (0,0), size = (10,10),scale=1.0,*args):
         super(Zone, self).__init__(parent)
 
+        self.name = name
         self.selectable = False
         self.selected = False
 
-        self.setMinimumSize(size[0], size[1])
+        scaledX=position[0]*scale
+        scaledY=position[1]*scale
+        scaledW=size[0]*scale
+        scaledH=size[1]*scale
+        self.move(scaledX,scaledY)
+        self.setMinimumSize(scaledW, scaledH)
         #self.setMaximumSize(300, 350)
-        self.pinkPixmap = QPixmap('assets/japan.png')
+        self.pinkPixmap = QPixmap('assets/zonesBitmaps/'+name+'.png')
+        self.pinkPixmap = self.pinkPixmap.scaledToWidth(scaledW)
         self.whitePixmap = self.pinkPixmap.copy()
         self.whitePixmap.fill()
 
@@ -43,16 +50,16 @@ class Zone(QPushButton):
     def enterEvent(self, ev):
         #self.emit(SIGNAL('hoverIn()'))
         self.label.setPixmap(self.whitePixmap)
-        print('Inside')
+        #print('Inside')
 
     def leaveEvent(self, ev):
         #self.emit(SIGNAL('hoverOut()'))
         self.label.setPixmap(self.pinkPixmap)
-        print('Outside')
+        #print('Outside')
 
     def mousePressEvent(self, ev): 
         self.zoneActivated.emit("I was clicked")
-        print('Button was clicked')
+        print(self.name + ' clicked')
 
 class Hand(QWidget):
     def __init__(self,parent=None,width=300,height=150):
@@ -138,13 +145,14 @@ class Map(QWidget):
     Holds all interactive zones
     """
 
-    def __init__(self,parent=None,width=600,height=450):
+    def __init__(self,parent=None,width=400,height=450):
         super(Map,self).__init__(parent)
         self.scale = width / 826.0
         self.zones = {}
         self.loadFromAssets()
 
     def loadFromAssets(self):
+        self.createBackground()
         self.createZones()
 
     def createZones(self):
@@ -156,14 +164,16 @@ class Map(QWidget):
             f.readline()
             for line in f:
                 (name,x,y,w,h) = line.split(",")
-                x=int(int(x)*self.scale)
-                y=int(int(y)*self.scale)
-                w=int(int(w)*self.scale)
-                h=int(int(h)*self.scale)
-                zone = Zone(self,name,(x,y),(w,h))
-                zone.move(x,y)
+                x=int(x)
+                y=int(y)
+                w=int(w)
+                h=int(h)
+                zone = Zone(self,name,(x,y),(w,h),self.scale)
                 self.zones[name] = zone
 
+    def createBackground(self):
+        pass
+    
     def setPossibleZones(self,zoneList):
         for zoneName in zoneList:
             self.zones[zoneName].selectable = True
