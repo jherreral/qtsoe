@@ -1,18 +1,21 @@
+#import logging
+
 from PySide2.QtWidgets import (QApplication,
 QMainWindow,QLabel,QPlainTextEdit,QPushButton,
 QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
-from PySide2.QtGui import QPixmap,QImage
+from PySide2.QtGui import QPixmap,QImage,QColor
 from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot,QEvent,QCoreApplication
 
 import gameboard as gb
 from os import getcwd
+
 
 class Zone(QPushButton):
     """
     Visible object that represents a zone in the game board. It allows the user
     to respond to requests made by the Game Master.
     pinkPixmap is the non-visible, interactive part of the widget (the button).
-    whitePixmap is the visible, non-interactive part (the canvas).
+    hoverPixmap is the visible, non-interactive part (the canvas).
     """
     zoneActivated = Signal(str)
 
@@ -32,11 +35,15 @@ class Zone(QPushButton):
         #self.setMaximumSize(300, 350)
         self.pinkPixmap = QPixmap('assets/zonesBitmaps/'+name+'.png')
         self.pinkPixmap = self.pinkPixmap.scaledToWidth(scaledW)
-        self.whitePixmap = self.pinkPixmap.copy()
-        self.whitePixmap.fill()
+        self.hoverPixmap = self.pinkPixmap.copy()
+        self.hoverPixmap.fill()
+        self.offPixmap = self.pinkPixmap.copy()
+        self.offPixmap.fill(QColor(0,0,64,255))
+        self.onPixmap = self.pinkPixmap.copy()
+        self.onPixmap.fill(QColor(128,0,0,255))
 
         self.label = QLabel(self)
-        self.label.setPixmap(self.pinkPixmap)
+        self.label.setPixmap(self.offPixmap)
         self.label.setScaledContents(True)
 
         
@@ -47,14 +54,25 @@ class Zone(QPushButton):
         #self.connect(self.button, SIGNAL('hoverIn()'), self.onEnter)
         #self.connect(self.button, SIGNAL('hoverOut()'), self.onLeave)
 
+    def setSelectable(self):
+        self.selectable = True
+        self.label.setPixmap(self.onPixmap)
+
+    def placeTroop(self):
+        pass
+
     def enterEvent(self, ev):
         #self.emit(SIGNAL('hoverIn()'))
-        self.label.setPixmap(self.whitePixmap)
+        if self.selectable:
+            self.label.setPixmap(self.hoverPixmap)
         #print('Inside')
 
     def leaveEvent(self, ev):
         #self.emit(SIGNAL('hoverOut()'))
-        self.label.setPixmap(self.pinkPixmap)
+        if self.selectable:
+            self.label.setPixmap(self.onPixmap)
+        else:
+            self.label.setPixmap(self.offPixmap)
         #print('Outside')
 
     def mousePressEvent(self, ev): 
@@ -176,8 +194,14 @@ class Map(QWidget):
     
     def setPossibleZones(self,zoneList):
         for zoneName in zoneList:
-            self.zones[zoneName].selectable = True
+            self.zones[zoneName].setSelectable()
 
+class testButton(QPushButton):
+    def __init__(self,parent=None):
+        super(testButton,self).__init__(parent)
+
+    def mousePressEvent(self,ev):
+        self.parent().map.setPossibleZones(['Chile'])
 
 class PlayerView(QWidget):
     """
@@ -204,6 +228,7 @@ class PlayerView(QWidget):
         self.hand=Hand(self)
         self.hand.move(0,400)
         self.map = Map(self)
+        self.testButton = testButton(self)
 
         #self.zone1=Zone(self)
         
