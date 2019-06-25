@@ -6,6 +6,7 @@ from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot,QEvent,QCoreApplication
 
 import gameboard as gb
 from os import getcwd
+import logging
 
 class Zone(QPushButton):
     """
@@ -58,7 +59,7 @@ class Zone(QPushButton):
         #print('Outside')
 
     def mousePressEvent(self, ev): 
-        self.zoneActivated.emit("I was clicked")
+        self.zoneActivated.emit(self.name+' was clicked')
         print(self.name + ' clicked')
 
 class Hand(QWidget):
@@ -94,18 +95,19 @@ class Hand(QWidget):
         self.cardsLayout.addWidget(QPushButton("Placeholder 3"),1,3)
         self.mainLayout.addLayout(self.cardsLayout,1,1)
 
-class Log(QPlainTextEdit):
+class Log(logging.Handler):
     def __init__(self,parent=None,width=150,height=150):
-        super(Log,self).__init__(parent)
-        self.setPlainText("Placeholder log text\n")
-        self.resize(width,height)
-        self.setReadOnly(True)
-        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        super().__init__()
+        self.widget = QPlainTextEdit(parent)
+        self.widget.setPlainText("Placeholder log text\n")
+        self.widget.resize(width,height)
+        self.widget.setReadOnly(True)
+        self.widget.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
 
     @Slot()
     @Slot(str)
     def addEntry(self,text='blo'):
-        self.appendPlainText(text)
+        self.widget.appendPlainText(text)
         print('appending')
 
 class Track(QWidget):
@@ -149,6 +151,7 @@ class Map(QWidget):
         super(Map,self).__init__(parent)
         self.scale = width / 826.0
         self.zones = {}
+        self.parent=parent
         self.loadFromAssets()
 
     def loadFromAssets(self):
@@ -169,6 +172,7 @@ class Map(QWidget):
                 w=int(w)
                 h=int(h)
                 zone = Zone(self,name,(x,y),(w,h),self.scale)
+                zone.zoneActivated.connect(self.parent.log.addEntry)
                 self.zones[name] = zone
 
     def createBackground(self):
@@ -198,7 +202,7 @@ class PlayerView(QWidget):
 
         self.setMinimumSize(800,600)
         self.log = Log(self)
-        self.log.move(600,100)
+        self.log.widget.move(600,100)
         self.track = Track(self)
         self.track.move(600,300)
         self.hand=Hand(self)
@@ -207,7 +211,7 @@ class PlayerView(QWidget):
 
         #self.zone1=Zone(self)
         
-        #self.zone1.zoneActivated.connect(self.log.addEntry)
+        #Zone.zoneActivated.connect(self.log.addEntry)
 
 app = QApplication([])
 
