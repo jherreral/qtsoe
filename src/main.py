@@ -1,7 +1,7 @@
 from PySide2.QtWidgets import (QApplication,
 QMainWindow,QLabel,QPlainTextEdit,QPushButton,
 QSizePolicy,QVBoxLayout,QGridLayout,QWidget,QInputDialog)
-from PySide2.QtGui import QPixmap,QImage
+from PySide2.QtGui import QPixmap,QImage,QColor
 from PySide2.QtCore import Qt,SIGNAL,QObject,Signal,Slot,QEvent,QCoreApplication
 
 import gameboard as gb
@@ -16,12 +16,27 @@ class Zone(QPushButton):
     whitePixmap is the visible, non-interactive part (the canvas).
     """
     zoneActivated = Signal(str)
+    zoneSelected = Signal(str)
+
+    @property
+    def selectable(self):
+        return self._selectable
+
+    @selectable.setter
+    def selectable(self,value):
+        self._selectable=value
+        if self._selectable:
+            self.label.setPixmap(self.pinkPixmap)
+        else:
+            self.label.setPixmap(self.greyPixmap)
+
 
     def __init__(self, parent=None, name = "Empty", position = (0,0), size = (10,10),scale=1.0,*args):
         super(Zone, self).__init__(parent)
 
         self.name = name
-        self.selectable = False
+        self._selectable = False
+        self.hold = False
         self.selected = False
 
         scaledX=position[0]*scale
@@ -35,11 +50,12 @@ class Zone(QPushButton):
         self.pinkPixmap = self.pinkPixmap.scaledToWidth(scaledW)
         self.whitePixmap = self.pinkPixmap.copy()
         self.whitePixmap.fill()
-
+        self.greyPixmap = self.pinkPixmap.copy()
+        self.greyPixmap.fill(QColor(100,100,100))
+        #Done: Turn 'selectable' into a property that sets the unhover pixmap 
         self.label = QLabel(self)
-        self.label.setPixmap(self.pinkPixmap)
+        self.label.setPixmap(self.greyPixmap)
         self.label.setScaledContents(True)
-
         
         self.setMask(self.pinkPixmap.mask()) # THIS DOES THE MAGIC
 
@@ -50,17 +66,27 @@ class Zone(QPushButton):
 
     def enterEvent(self, ev):
         #self.emit(SIGNAL('hoverIn()'))
-        self.label.setPixmap(self.whitePixmap)
+        if self.selectable:
+            self.label.setPixmap(self.whitePixmap)
         #print('Inside')
 
     def leaveEvent(self, ev):
         #self.emit(SIGNAL('hoverOut()'))
-        self.label.setPixmap(self.pinkPixmap)
+        if self.selectable:
+            self.label.setPixmap(self.pinkPixmap)
+            
         #print('Outside')
 
-    def mousePressEvent(self, ev): 
-        self.zoneActivated.emit(self.name+' was clicked')
-        print(self.name + ' clicked')
+    def mousePressEvent(self, ev):
+        if self.selectable:
+            if not self.selected:
+                self.zoneActivated.emit(self.name+' was clicked')
+                print(self.name + ' clicked')
+                self.zoneSelected.emit(self.name)
+                if self.hold:
+                    self.selected = True
+            else:
+                self.selected = False
 
 class Hand(QWidget):
     def __init__(self,parent=None,width=300,height=150):
@@ -142,6 +168,34 @@ class Track(QWidget):
             playerColumns.addWidget(QLabel(str(p[3])),4,col)
         self.mainLayout.addLayout(playerColumns,1,2)
 
+# class MapRequest:
+#     def __init__(self,rq):
+#         for zone,state 
+
+class Request:
+    def __init__(self):
+        pass
+
+class ClickRequest(Request):
+    def __init__(self,zones,n):
+        self.goal = n
+        self.current = 0
+        self.availableZones = zones
+        self.selectedZones = dict(zip(zones,[0]*len(zones)))
+        self.hold = False
+
+    def update(self,ev):
+        self.selectedZones[ev] += 1
+        self.current += 1
+
+    def check(self):
+        if self.current == self.goal:
+            return self.selectedZones
+        else:
+            return None
+
+
+
 class Map(QWidget):
     """
     Holds all interactive zones
@@ -152,7 +206,48 @@ class Map(QWidget):
         self.scale = width / 826.0
         self.zones = {}
         self.parent=parent
+        self.request = None
+
         self.loadFromAssets()
+        self.setAllZones(False)
+
+        z = ['Chile','Argen','Ingla']
+        self.setRequest(ClickRequest(z,6))
+
+# Requests...
+# Map should set the state of the zones it is interested in, and receive
+# their feedback until the request criteria is met.
+# So each request type is defined by its criteria/goal, the possible zones
+# and the current progress.
+# 
+# For example, a request like 'CLick 5 countries in South America' could be:
+# Request
+# self.goal = 5
+# self.current = 0
+# self.zonesList = ['Chile','Argen',...]
+# for zone in self.zonesList:
+#     zone.selectable = True
+#     zone.hold = False
+# 
+# In Map add updateCurrentRequest() as a slot. Connect all zone.ZoneActivated
+# signals to that slot, so that it checks and updates the conditions.
+# 
+    def setRequest(self,r):
+        self.request = r
+        self.setZones(r.availableZones,True)
+        for zoneName in r.availableZones:
+            self.zones[zoneName].zoneSelected.connect(self.updateCurrentRequest)
+
+    @Slot(str)
+    def updateCurrentRequest(self,zoneName):
+        self.request.update(zoneName)
+        print("Updating with +1 to "+zoneName)
+        result = self.request.check()
+        if result:
+            #Send signal to GM or PlayerView.
+            print('Request done')
+            self.setAllZones(False)
+            self.request = None
 
     def loadFromAssets(self):
         self.createBackground()
@@ -178,10 +273,13 @@ class Map(QWidget):
     def createBackground(self):
         pass
     
-    def setPossibleZones(self,zoneList):
+    def setZones(self,zoneList,value):
         for zoneName in zoneList:
-            self.zones[zoneName].selectable = True
+            self.zones[zoneName].selectable = value
 
+    def setAllZones(self,value):
+        for zoneName in self.zones:
+            self.zones[zoneName].selectable = value
 
 class PlayerView(QWidget):
     """
