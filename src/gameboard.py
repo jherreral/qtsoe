@@ -1,13 +1,16 @@
 from enum import Enum
 
+
 class Phase(Enum):
     MOBILIZ = 0
-    TURN = 1 
+    TURN = 1
+
 
 class GameState:
     def __init__(self):
         self.playerOrder = []
         self.phase = Phase.MOBILIZ
+
 
 class Zone:
     def __init__(self):
@@ -18,8 +21,9 @@ class Zone:
         self.compass = None
         self.capital = None
 
+
 class GameBoard:
-    def __init__(self,players):
+    def __init__(self, players):
         self.mapGraph = None
         self.specialDeck = None
         self.discardDeck = None
@@ -30,14 +34,14 @@ class GameBoard:
 
     def loadFromAssets(self):
         """
-        Load data from assets in disc to RAM, 
+        Load data from assets in disc to RAM,
         creating all the necessary game objects
         """
         self.parseZones()
         self.parseEdges()
 
-    def parseZones(self):    
-        with open("../assets/zonesData.csv",'r') as f:
+    def parseZones(self):
+        with open("../assets/zonesData.csv", 'r') as f:
             for line in f.readlines():
                 data = line.split(';')
                 keyName = data[0]
@@ -52,13 +56,13 @@ class GameBoard:
             f.close()
 
     def parseEdges(self):
-        with open('../assets/IncidenceT2.txt','r') as f:
+        with open('../assets/IncidenceT2.txt', 'r') as f:
             for line in f.readlines():
                 nodeA = int(line.find('1'))
-                nodeB = int(line.find('1',nodeA+1))
-                self.mapGraph.append(nodeA,nodeB)
+                nodeB = int(line.find('1', nodeA+1))
+                self.mapGraph.append(nodeA, nodeB)
             f.close()
-    
+
 
 class Player:
     def __init(self):
@@ -68,5 +72,3 @@ class Player:
         self.hand = None
         self.team = None
         self.capital = None
-
-
