@@ -1,6 +1,9 @@
 from PySide2.QtWidgets import (
-    QWidget
+    QWidget,
+    QInputDialog
 )
+
+from PySide2.QtCore import Slot
 
 from hand import Hand
 from log import Log
@@ -33,7 +36,13 @@ class PlayerView(QWidget):
         self.hand = Hand(self)
         self.hand.move(0, 400)
         self.map = Map(self)
+        self.multiChoice(('asdf', 'qwer'))
 
-        # self.zone1=Zone(self)
-
-        # Zone.zoneActivated.connect(self.log.addEntry)
+    @Slot(tuple)
+    def multiChoice(self, choices):
+        '''Create a dialog with the choices and show it to the player'''
+        choicesAsList = [x for x in choices]
+        text, ok = QInputDialog.getItem(self, self.tr("QInputDialog().getText()"), self.tr("User name:"), choicesAsList)
+        if text and ok:
+            print(text)
+        

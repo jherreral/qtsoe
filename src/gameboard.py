@@ -2,14 +2,15 @@ from enum import Enum
 
 
 class Phase(Enum):
-    MOBILIZ = 0
-    TURN = 1
+    SETUP = 0
+    MOBILIZ = 1
+    TURN = 2
 
 
 class GameState:
     def __init__(self):
         self.playerOrder = []
-        self.phase = Phase.MOBILIZ
+        self.phase = Phase.SETUP
 
 
 class Zone:
@@ -65,7 +66,7 @@ class GameBoard:
 
 
 class Player:
-    def __init(self):
+    def __init__(self):
         self.user = None
         self.name = None
         self.faction = None

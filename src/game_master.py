@@ -13,3 +13,12 @@ class GameMaster:
 
     def play(self):
         pass
+
+    def dealCapitals(self):
+        '''Send Request to all players to choose their capital'''
+        capitalPairs = self.gb.getCapitalPairs()
+        for player in self.gb.players:
+            #Trigger somehow a multichoice slot of playerview
+            pass
+            
+            
