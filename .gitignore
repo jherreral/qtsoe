@@ -112,3 +112,4 @@ settings.json
 # Asset files
 /assets/*
 !/assets/.placeholder
+assets.zip
